@@ -43,7 +43,19 @@ import { formatDate } from "@/lib/utils";
 import { CONTACT_TYPES } from "@/lib/constants";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Plus, Users, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Users,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  MapPin,
+  Phone,
+  Mail,
+  CalendarDays,
+  StickyNote,
+  UserCircle,
+} from "lucide-react";
 import type { ContactFormData } from "@/types";
 
 interface Contact {
@@ -315,108 +327,174 @@ export default function ContactsPage() {
           if (!open) setEditingContact(null);
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg">
               {editingContact ? "Modifier le contact" : "Nouveau contact"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label>Nom *</Label>
+          <div className="space-y-5">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label>
+                Nom <span className="text-destructive">*</span>
+              </Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Ex: Jean Dupont"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Type</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(v) => {
-                    if (v !== null) {
-                      setForm({
-                        ...form,
-                        type: v as ContactFormData["type"],
-                      });
+
+            {/* Identity */}
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground pt-2 pb-1">
+                <UserCircle className="h-3.5 w-3.5" />
+                Profil
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Type</Label>
+                  <Select
+                    value={form.type}
+                    onValueChange={(v) => {
+                      if (v !== null) {
+                        setForm({
+                          ...form,
+                          type: v as ContactFormData["type"],
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONTACT_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Source</Label>
+                  <Input
+                    value={form.source}
+                    onChange={(e) =>
+                      setForm({ ...form, source: e.target.value })
                     }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONTACT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label>Ville</Label>
-                <Input
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                />
+                    placeholder="Ex: LeBonCoin"
+                    className="text-xs"
+                  />
+                </div>
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Adresse</Label>
-              <Input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Ex: 12 rue de la Paix, 75001 Paris"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Téléphone</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
+
+            {/* Coordinates */}
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground pt-2 pb-1">
+                <Phone className="h-3.5 w-3.5" />
+                Coordonnées
               </div>
-              <div className="space-y-1">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label>Source</Label>
-                <Input
-                  value={form.source}
-                  onChange={(e) => setForm({ ...form, source: e.target.value })}
-                  placeholder="Ex: Recommandation"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Dernier contact</Label>
-                <Input
-                  type="date"
-                  value={form.lastContactDate}
-                  onChange={(e) =>
-                    setForm({ ...form, lastContactDate: e.target.value })
-                  }
-                />
+              <div className="grid grid-cols-2 gap-3 mt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Téléphone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm({ ...form, phone: e.target.value })
+                    }
+                    placeholder="06 12 34 56 78"
+                    className="text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm({ ...form, email: e.target.value })
+                    }
+                    placeholder="contact@example.com"
+                    className="text-xs"
+                  />
+                </div>
               </div>
             </div>
-            <div className="space-y-1">
-              <Label>Notes</Label>
+
+            {/* Location */}
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground pt-2 pb-1">
+                <MapPin className="h-3.5 w-3.5" />
+                Localisation
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Ville</Label>
+                  <Input
+                    value={form.city}
+                    onChange={(e) =>
+                      setForm({ ...form, city: e.target.value })
+                    }
+                    placeholder="Ex: Paris"
+                    className="text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Adresse</Label>
+                  <Input
+                    value={form.address}
+                    onChange={(e) =>
+                      setForm({ ...form, address: e.target.value })
+                    }
+                    placeholder="Ex: 12 rue de la Paix"
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Date */}
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground pt-2 pb-1">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Suivi
+              </div>
+              <div className="mt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Dernier contact</Label>
+                  <Input
+                    type="date"
+                    value={form.lastContactDate}
+                    onChange={(e) =>
+                      setForm({ ...form, lastContactDate: e.target.value })
+                    }
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground pt-2 pb-1">
+                <StickyNote className="h-3.5 w-3.5" />
+                Notes
+              </div>
               <Textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={2}
+                placeholder="Remarques, contexte..."
+                className="mt-1 resize-none"
               />
             </div>
-            <div className="flex justify-end gap-2">
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Button variant="outline" onClick={() => setFormOpen(false)}>
                 Annuler
               </Button>
