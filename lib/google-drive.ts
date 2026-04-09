@@ -5,10 +5,16 @@ const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 const APP_FOLDER_NAME = "WWB Investissement";
 
 function getOAuth2Client() {
+  const baseUrl =
+    process.env.AUTH_URL ||
+    process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.AUTH_URL}/api/google/callback`
+    `${baseUrl}/api/google/callback`
   );
 }
 
@@ -28,10 +34,8 @@ export async function exchangeCode(code: string) {
   return tokens;
 }
 
-export async function getDriveClient(userId: string) {
-  const token = await prisma.googleDriveToken.findUnique({
-    where: { userId },
-  });
+export async function getDriveClient(_userId?: string) {
+  const token = await prisma.googleDriveToken.findFirst();
   if (!token) return null;
 
   const client = getOAuth2Client();
@@ -48,7 +52,7 @@ export async function getDriveClient(userId: string) {
       update.expiresAt = new Date(newTokens.expiry_date);
     if (Object.keys(update).length > 0) {
       await prisma.googleDriveToken.update({
-        where: { userId },
+        where: { id: token.id },
         data: update,
       });
     }
@@ -57,14 +61,12 @@ export async function getDriveClient(userId: string) {
   return google.drive({ version: "v3", auth: client });
 }
 
-export async function getOrCreateRootFolder(userId: string) {
-  const token = await prisma.googleDriveToken.findUnique({
-    where: { userId },
-  });
+export async function getOrCreateRootFolder(_userId?: string) {
+  const token = await prisma.googleDriveToken.findFirst();
   if (!token) return null;
 
   if (token.rootFolderId) {
-    const drive = await getDriveClient(userId);
+    const drive = await getDriveClient();
     if (!drive) return null;
     try {
       const res = await drive.files.get({
@@ -77,7 +79,7 @@ export async function getOrCreateRootFolder(userId: string) {
     }
   }
 
-  const drive = await getDriveClient(userId);
+  const drive = await getDriveClient();
   if (!drive) return null;
 
   const res = await drive.files.create({
@@ -90,7 +92,7 @@ export async function getOrCreateRootFolder(userId: string) {
 
   const folderId = res.data.id!;
   await prisma.googleDriveToken.update({
-    where: { userId },
+    where: { id: token.id },
     data: { rootFolderId: folderId },
   });
 

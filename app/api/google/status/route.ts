@@ -9,8 +9,7 @@ export async function GET() {
   }
 
   try {
-    const token = await prisma.googleDriveToken.findUnique({
-      where: { userId },
+    const token = await prisma.googleDriveToken.findFirst({
       select: { id: true, rootFolderId: true },
     });
     return NextResponse.json({
@@ -24,8 +23,8 @@ export async function GET() {
 
 export async function DELETE() {
   try {
-    const userId = await requireUserId();
-    await prisma.googleDriveToken.deleteMany({ where: { userId } });
+    await requireUserId();
+    await prisma.googleDriveToken.deleteMany();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
