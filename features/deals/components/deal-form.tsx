@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DEAL_STATUSES, DEAL_PROFITABLE, DPE_VALUES } from "@/lib/constants";
+import { MapPin, Euro, BarChart3, Link2, StickyNote } from "lucide-react";
 import type { DealFormData } from "@/types";
 
 interface DealFormProps {
@@ -27,6 +28,31 @@ interface DealFormProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: DealFormData) => void;
   initialData?: Partial<DealFormData> & { id?: string };
+}
+
+const DPE_COLORS: Record<string, string> = {
+  A: "text-green-400",
+  B: "text-lime-400",
+  C: "text-yellow-400",
+  D: "text-orange-400",
+  E: "text-orange-500",
+  F: "text-red-400",
+  G: "text-red-500",
+};
+
+function SectionTitle({
+  icon: Icon,
+  children,
+}: {
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground pt-2 pb-1">
+      <Icon className="h-3.5 w-3.5" />
+      {children}
+    </div>
+  );
 }
 
 export function DealForm({
@@ -91,137 +117,187 @@ export function DealForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg">
             {initialData?.id ? "Modifier le deal" : "Nouveau deal"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2 col-span-2">
-              <Label>Nom du bien *</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Ville *</Label>
-              <Input
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Adresse</Label>
-              <Input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-              />
-            </div>
-            <CurrencyInput
-              label="Prix *"
-              value={form.price}
-              onChange={(v) => setForm({ ...form, price: v })}
-              suffix="€"
-              step={1000}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Name */}
+          <div className="space-y-2">
+            <Label>
+              Nom du bien <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Ex: Immeuble 3 lots Montreuil"
+              required
             />
-            <CurrencyInput
-              label="Loyers mensuels HC"
-              value={form.monthlyRent}
-              onChange={(v) => setForm({ ...form, monthlyRent: v })}
-              suffix="€/mois"
-              step={50}
-            />
-            <CurrencyInput
-              label="Nombre de lots"
-              value={form.lots}
-              onChange={(v) => setForm({ ...form, lots: Math.max(1, Math.round(v)) })}
-              min={1}
-            />
-            <div className="space-y-2">
-              <Label>DPE</Label>
-              <Select
-                value={form.dpe || "none"}
-                onValueChange={(v) => {
-                  if (v !== null) setForm({ ...form, dpe: v === "none" ? "" : v });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {DPE_VALUES.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Statut</Label>
-              <Select
-                value={form.status}
-                onValueChange={(v) => {
-                  if (v !== null) setForm({ ...form, status: v as DealFormData["status"] });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DEAL_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Rentable ?</Label>
-              <Select
-                value={form.profitable}
-                onValueChange={(v) => {
-                  if (v !== null) setForm({ ...form, profitable: v as DealFormData["profitable"] });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DEAL_PROFITABLE.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </div>
+
+          {/* Location */}
+          <div>
+            <SectionTitle icon={MapPin}>Localisation</SectionTitle>
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Ville <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  placeholder="Ex: Montreuil"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Adresse</Label>
+                <Input
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm({ ...form, address: e.target.value })
+                  }
+                  placeholder="Ex: 12 rue de la Paix"
+                />
+              </div>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Lien annonce</Label>
+
+          {/* Financials */}
+          <div>
+            <SectionTitle icon={Euro}>Financier</SectionTitle>
+            <div className="grid grid-cols-3 gap-3 mt-1">
+              <CurrencyInput
+                label="Prix *"
+                value={form.price}
+                onChange={(v) => setForm({ ...form, price: v })}
+                suffix="€"
+                step={1000}
+              />
+              <CurrencyInput
+                label="Loyers HC"
+                value={form.monthlyRent}
+                onChange={(v) => setForm({ ...form, monthlyRent: v })}
+                suffix="€/mois"
+                step={50}
+              />
+              <CurrencyInput
+                label="Lots"
+                value={form.lots}
+                onChange={(v) =>
+                  setForm({ ...form, lots: Math.max(1, Math.round(v)) })
+                }
+                min={1}
+              />
+            </div>
+          </div>
+
+          {/* Classification */}
+          <div>
+            <SectionTitle icon={BarChart3}>Classification</SectionTitle>
+            <div className="grid grid-cols-3 gap-3 mt-1">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Statut</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(v) => {
+                    if (v !== null)
+                      setForm({
+                        ...form,
+                        status: v as DealFormData["status"],
+                      });
+                  }}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEAL_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Rentable ?</Label>
+                <Select
+                  value={form.profitable}
+                  onValueChange={(v) => {
+                    if (v !== null)
+                      setForm({
+                        ...form,
+                        profitable: v as DealFormData["profitable"],
+                      });
+                  }}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEAL_PROFITABLE.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">DPE</Label>
+                <Select
+                  value={form.dpe || "none"}
+                  onValueChange={(v) => {
+                    if (v !== null)
+                      setForm({ ...form, dpe: v === "none" ? "" : v });
+                  }}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {DPE_VALUES.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        <span className={DPE_COLORS[d]}>{d}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Link */}
+          <div>
+            <SectionTitle icon={Link2}>Lien annonce</SectionTitle>
             <Input
               type="url"
               value={form.listingUrl}
               onChange={(e) =>
                 setForm({ ...form, listingUrl: e.target.value })
               }
-              placeholder="https://..."
+              placeholder="https://www.leboncoin.fr/..."
+              className="mt-1"
             />
           </div>
-          <div className="space-y-2">
-            <Label>Notes</Label>
+
+          {/* Notes */}
+          <div>
+            <SectionTitle icon={StickyNote}>Notes</SectionTitle>
             <Textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}
+              placeholder="Observations, points d'attention..."
+              className="mt-1 resize-none"
             />
           </div>
-          <div className="flex justify-end gap-2">
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
             <Button
               type="button"
               variant="outline"
