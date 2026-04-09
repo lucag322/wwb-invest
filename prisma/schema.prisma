@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  tasks             Task[]
+  deals             Deal[]
+  financeContacts   FinanceContact[]
+  financeDocuments  FinanceDocument[]
+  financeOverview   FinanceOverview?
+  sciInfo           SCIInfo?
+  sciChecklist      SCIChecklist[]
+  contacts          Contact[]
+  dashboardSettings DashboardSettings?
+  googleDriveToken  GoogleDriveToken?
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  priority    String    @default("medium")
+  status      String    @default("todo")
+  category    String    @default("admin")
+  dueDate     DateTime?
+  notes       String?
+  dealId      String?
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deal Deal? @relation(fields: [dealId], references: [id], onDelete: SetNull)
+}
+
+model Deal {
+  id                String   @id @default(cuid())
+  name              String
+  city              String
+  address           String?
+  price             Float
+  monthlyRent       Float
+  lots              Int      @default(1)
+  dpe               String?
+  listingUrl        String?
+  status            String   @default("a_analyser")
+  profitable        String   @default("non")
+  estimatedCashFlow Float?
+  grossYield        Float?
+  notes             String?
+  userId            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+}
+
+model FinanceContact {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  email     String?
+  phone     String?
+  status    String   @default("a_contacter")
+  notes     String?
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FinanceDocument {
+  id      String  @id @default(cuid())
+  name    String
+  checked Boolean @default(false)
+  userId  String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FinanceOverview {
+  id                String @id @default(cuid())
+  availableDeposit  Float  @default(0)
+  borrowingCapacity Float  @default(0)
+  maxMonthlyPayment Float  @default(0)
+  userId            String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SCIInfo {
+  id           String @id @default(cuid())
+  name         String @default("")
+  associates   String @default("")
+  distribution String @default("")
+  taxRegime    String @default("IS")
+  legalNotes   String @default("")
+  nextSteps    String @default("")
+  userId       String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SCIChecklist {
+  id      String  @id @default(cuid())
+  item    String
+  checked Boolean @default(false)
+  userId  String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id              String    @id @default(cuid())
+  name            String
+  type            String
+  city            String?
+  address         String?
+  phone           String?
+  email           String?
+  source          String?
+  notes           String?
+  lastContactDate DateTime?
+  userId          String
+  createdAt       DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GoogleDriveToken {
+  id           String   @id @default(cuid())
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  rootFolderId String?
+  userId       String   @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DashboardSettings {
+  id                  String @id @default(cuid())
+  cashFlowTarget      Float  @default(500)
+  widgetConfig        Json   @default("{}")
+  calculatorDefaults  Json   @default("{}")
+  userId              String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
