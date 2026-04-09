@@ -10,8 +10,11 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const { pathname } = nextUrl;
 
-      const isAuthPage =
-        pathname.startsWith("/login") || pathname.startsWith("/register");
+      if (pathname.startsWith("/register")) {
+        return Response.redirect(new URL("/login", nextUrl));
+      }
+
+      const isAuthPage = pathname.startsWith("/login");
 
       const isPublic =
         pathname.startsWith("/api/auth") ||

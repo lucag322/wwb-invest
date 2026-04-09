@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,7 +55,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="admin@wwb.fr"
+              placeholder="email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -77,12 +76,6 @@ export default function LoginPage() {
             Se connecter
           </Button>
         </form>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Pas encore de compte ?{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            Créer un compte
-          </Link>
-        </p>
       </CardContent>
     </Card>
   );
