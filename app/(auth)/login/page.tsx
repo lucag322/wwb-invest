@@ -29,7 +29,7 @@ export default function LoginPage() {
 
     setLoading(false);
 
-    if (result?.error) {
+    if (!result?.ok || result?.error) {
       toast.error("Email ou mot de passe incorrect");
       return;
     }
