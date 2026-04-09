@@ -96,6 +96,7 @@ export default function DocumentsPage() {
   const [renameTarget, setRenameTarget] = useState<DriveFile | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DriveFile | null>(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const checkConnection = useCallback(async () => {
@@ -189,21 +190,26 @@ export default function DocumentsPage() {
   }
 
   async function handleCreateFolder() {
-    if (!newFolderName.trim()) return;
-    const formData = new FormData();
-    formData.append("action", "createFolder");
-    formData.append("name", newFolderName.trim());
-    if (currentFolderId) formData.append("parentId", currentFolderId);
+    if (!newFolderName.trim() || creatingFolder) return;
+    setCreatingFolder(true);
+    try {
+      const formData = new FormData();
+      formData.append("action", "createFolder");
+      formData.append("name", newFolderName.trim());
+      if (currentFolderId) formData.append("parentId", currentFolderId);
 
-    const res = await fetch("/api/documents", {
-      method: "POST",
-      body: formData,
-    });
-    if (res.ok) {
-      toast.success("Dossier créé");
-      setNewFolderOpen(false);
-      setNewFolderName("");
-      loadFiles(currentFolderId || undefined);
+      const res = await fetch("/api/documents", {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        toast.success("Dossier créé");
+        setNewFolderOpen(false);
+        setNewFolderName("");
+        loadFiles(currentFolderId || undefined);
+      }
+    } finally {
+      setCreatingFolder(false);
     }
   }
 
@@ -407,7 +413,8 @@ export default function DocumentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setRenameTarget(folder);
                               setRenameName(folder.name);
                             }}
@@ -415,7 +422,10 @@ export default function DocumentsPage() {
                             <Pencil className="h-4 w-4 mr-2" /> Renommer
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => setDeleteTarget(folder)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(folder);
+                            }}
                             className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" /> Supprimer
@@ -479,7 +489,8 @@ export default function DocumentsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setRenameTarget(file);
                                   setRenameName(file.name);
                                 }}
@@ -487,7 +498,10 @@ export default function DocumentsPage() {
                                 <Pencil className="h-4 w-4 mr-2" /> Renommer
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => setDeleteTarget(file)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteTarget(file);
+                                }}
                                 className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" /> Supprimer
@@ -535,10 +549,16 @@ export default function DocumentsPage() {
               <Button
                 variant="outline"
                 onClick={() => setNewFolderOpen(false)}
+                disabled={creatingFolder}
               >
                 Annuler
               </Button>
-              <Button onClick={handleCreateFolder}>Créer</Button>
+              <Button onClick={handleCreateFolder} disabled={creatingFolder}>
+                {creatingFolder && (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                )}
+                Créer
+              </Button>
             </div>
           </div>
         </DialogContent>
