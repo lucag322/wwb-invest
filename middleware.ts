@@ -1,8 +1,10 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+export async function middleware(req: NextRequest) {
+  const token = await getToken({ req });
+  const isLoggedIn = !!token;
   const { pathname } = req.nextUrl;
 
   const isAuthPage =
@@ -13,7 +15,9 @@ export default auth((req) => {
     pathname.startsWith("/icons") ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
-    pathname === "/favicon.ico";
+    pathname === "/favicon.ico" ||
+    pathname === "/favicon.png" ||
+    pathname === "/logo.png";
 
   if (isPublic) return NextResponse.next();
 
@@ -29,10 +33,10 @@ export default auth((req) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js).*)",
+    "/((?!_next/static|_next/image|favicon.ico|favicon.png|logo.png|icons|manifest.json|sw.js).*)",
   ],
 };
