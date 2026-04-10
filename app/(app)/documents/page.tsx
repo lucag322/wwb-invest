@@ -39,6 +39,8 @@ import {
   HardDrive,
   Loader2,
   Unplug,
+  Search,
+  X,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -104,6 +106,7 @@ export default function DocumentsPage() {
   const [renameName, setRenameName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DriveFile | null>(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [search, setSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (connected && !initialLoad) {
@@ -290,11 +293,16 @@ export default function DocumentsPage() {
     );
   }
 
+  const q = search.toLowerCase().trim();
   const folders = files.filter(
-    (f) => f.mimeType === "application/vnd.google-apps.folder"
+    (f) =>
+      f.mimeType === "application/vnd.google-apps.folder" &&
+      (!q || f.name.toLowerCase().includes(q))
   );
   const documents = files.filter(
-    (f) => f.mimeType !== "application/vnd.google-apps.folder"
+    (f) =>
+      f.mimeType !== "application/vnd.google-apps.folder" &&
+      (!q || f.name.toLowerCase().includes(q))
   );
 
   return (
@@ -356,10 +364,43 @@ export default function DocumentsPage() {
         ))}
       </div>
 
+      {/* Search bar */}
+      {files.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un fichier ou dossier..."
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center h-48">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
+      ) : folders.length === 0 && documents.length === 0 && q ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
+            <Search className="h-10 w-10 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Aucun résultat pour &quot;{search}&quot;
+            </p>
+            <Button variant="outline" size="sm" onClick={() => setSearch("")}>
+              Effacer la recherche
+            </Button>
+          </CardContent>
+        </Card>
       ) : files.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
