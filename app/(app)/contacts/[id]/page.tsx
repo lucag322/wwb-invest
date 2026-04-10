@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -61,7 +63,10 @@ const TYPE_LABELS: Record<string, string> = {
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [contact, setContact] = useState<ContactDetail | null>(null);
+  const { data: contact, mutate } = useSWR<ContactDetail>(
+    id ? `/api/contacts/${id}` : null,
+    fetcher
+  );
   const [editing, setEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [form, setForm] = useState<ContactFormData>({
@@ -75,18 +80,6 @@ export default function ContactDetailPage() {
     notes: "",
     lastContactDate: "",
   });
-
-  const fetchContact = useCallback(async () => {
-    const res = await fetch(`/api/contacts/${id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setContact(data);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchContact();
-  }, [fetchContact]);
 
   function startEdit() {
     if (!contact) return;
@@ -118,7 +111,7 @@ export default function ContactDetailPage() {
     if (res.ok) {
       toast.success("Contact mis à jour");
       setEditing(false);
-      fetchContact();
+      mutate();
     } else {
       toast.error("Erreur lors de la mise à jour");
     }

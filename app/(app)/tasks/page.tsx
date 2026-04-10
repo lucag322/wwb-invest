@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, Suspense } from "react";
+import { useState, useMemo, Suspense } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
@@ -80,8 +82,9 @@ function TasksContent() {
   const categoryParam = searchParams.get("category");
   const dealIdParam = searchParams.get("dealId");
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tasks = [], isLoading: loading, mutate } = useSWR<Task[]>("/api/tasks", fetcher);
+  const { data: rawDeals = [] } = useSWR<Array<{ id: string; name: string }>>("/api/deals", fetcher);
+  const deals = useMemo(() => rawDeals.map((d) => ({ id: d.id, name: d.name })), [rawDeals]);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState(categoryParam || "all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -89,21 +92,6 @@ function TasksContent() {
   const [formOpen, setFormOpen] = useState(!!dealIdParam);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deals, setDeals] = useState<Array<{ id: string; name: string }>>([]);
-
-  const fetchTasks = useCallback(async () => {
-    const res = await fetch("/api/tasks");
-    const data = await res.json();
-    setTasks(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchTasks();
-    fetch("/api/deals")
-      .then((r) => r.json())
-      .then((d) => setDeals(d.map((deal: { id: string; name: string }) => ({ id: deal.id, name: deal.name }))));
-  }, [fetchTasks]);
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
@@ -124,7 +112,7 @@ function TasksContent() {
     });
     if (res.ok) {
       toast.success("Tâche créée");
-      fetchTasks();
+      mutate();
     }
   }
 
@@ -138,7 +126,7 @@ function TasksContent() {
     if (res.ok) {
       toast.success("Tâche modifiée");
       setEditingTask(null);
-      fetchTasks();
+      mutate();
     }
   }
 
@@ -148,7 +136,7 @@ function TasksContent() {
     if (res.ok) {
       toast.success("Tâche supprimée");
       setDeleteId(null);
-      fetchTasks();
+      mutate();
     }
   }
 
@@ -159,7 +147,7 @@ function TasksContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
-    fetchTasks();
+    mutate();
   }
 
   if (loading) {

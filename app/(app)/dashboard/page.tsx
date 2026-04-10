@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -333,26 +335,19 @@ function CustomBarTooltip({
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const { data, mutate } = useSWR<DashboardData>("/api/dashboard", fetcher);
   const [editing, setEditing] = useState(false);
   const [widgetConfig, setWidgetConfig] = useState<Record<string, boolean>>(
     getDefaultConfig()
   );
+  const [configSynced, setConfigSynced] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fetchData = useCallback(() => {
-    fetch("/api/dashboard")
-      .then((r) => r.json())
-      .then((d: DashboardData) => {
-        setData(d);
-        const merged = { ...getDefaultConfig(), ...d.widgetConfig };
-        setWidgetConfig(merged);
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  if (data && !configSynced) {
+    const merged = { ...getDefaultConfig(), ...data.widgetConfig };
+    setWidgetConfig(merged);
+    setConfigSynced(true);
+  }
 
   const saveConfig = useCallback(async () => {
     setSaving(true);
@@ -364,20 +359,22 @@ export default function DashboardPage() {
       });
       toast.success("Dashboard sauvegardé");
       setEditing(false);
-      fetchData();
+      mutate();
     } catch {
       toast.error("Erreur de sauvegarde");
     } finally {
       setSaving(false);
     }
-  }, [widgetConfig, fetchData]);
+  }, [widgetConfig, mutate]);
 
   const handleKpiSave = useCallback(
     async (kpi: KpiDefinition, value: number) => {
       if (!kpi.editable) return;
 
-      setData((prev) =>
-        prev ? { ...prev, [kpi.editable!.field]: value } : prev
+      mutate(
+        (prev) =>
+          prev ? { ...prev, [kpi.editable!.field]: value } : undefined,
+        { revalidate: false }
       );
 
       if (kpi.editable.api === "dashboard") {
@@ -394,9 +391,9 @@ export default function DashboardPage() {
         });
       }
 
-      fetchData();
+      mutate();
     },
-    [fetchData]
+    [mutate]
   );
 
   const toggleWidget = (key: string) => {

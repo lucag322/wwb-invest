@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -84,9 +86,14 @@ function formatFileSize(bytes?: string) {
 }
 
 export default function DocumentsPage() {
-  const [connected, setConnected] = useState<boolean | null>(null);
+  const { data: statusData, mutate: mutateStatus } = useSWR<{ connected: boolean; rootFolderId?: string }>(
+    "/api/google/status",
+    fetcher
+  );
+  const connected = statusData?.connected ?? null;
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [rootFolderId, setRootFolderId] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
@@ -99,18 +106,10 @@ export default function DocumentsPage() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const checkConnection = useCallback(async () => {
-    const res = await fetch("/api/google/status");
-    const data = await res.json();
-    setConnected(data.connected);
-    if (data.connected) {
-      loadFiles();
-    }
-  }, []);
-
-  useEffect(() => {
-    checkConnection();
-  }, [checkConnection]);
+  if (connected && !initialLoad) {
+    setInitialLoad(true);
+    loadFiles();
+  }
 
   async function loadFiles(folderId?: string) {
     setLoading(true);
@@ -119,7 +118,7 @@ export default function DocumentsPage() {
       const res = await fetch(`/api/documents${params}`);
       const data = await res.json();
       if (data.error === "not_connected") {
-        setConnected(false);
+        mutateStatus({ connected: false }, { revalidate: false });
         return;
       }
       setFiles(data.files || []);
@@ -141,7 +140,7 @@ export default function DocumentsPage() {
 
   async function disconnectDrive() {
     await fetch("/api/google/status", { method: "DELETE" });
-    setConnected(false);
+    mutateStatus({ connected: false }, { revalidate: false });
     setFiles([]);
     toast.success("Google Drive déconnecté");
   }

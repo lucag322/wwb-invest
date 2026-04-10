@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
@@ -63,6 +65,8 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function SCIPage() {
+  const { data: sciData, mutate: mutateSci } = useSWR<{ info: SCIInfo }>("/api/sci", fetcher);
+  const { data: allTasks = [] } = useSWR<Task[]>("/api/tasks", fetcher);
   const [info, setInfo] = useState<SCIInfo>({
     name: "",
     associates: "",
@@ -71,24 +75,15 @@ export default function SCIPage() {
     legalNotes: "",
     nextSteps: "",
   });
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [infoSynced, setInfoSynced] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    const [sciRes, tasksRes] = await Promise.all([
-      fetch("/api/sci"),
-      fetch("/api/tasks"),
-    ]);
-    const sciData = await sciRes.json();
-    const allTasks: Task[] = await tasksRes.json();
+  if (sciData?.info && !infoSynced) {
+    setInfo(sciData.info);
+    setInfoSynced(true);
+  }
 
-    if (sciData.info) setInfo(sciData.info);
-    setTasks(allTasks.filter((t) => t.category === "sci"));
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const tasks = useMemo(() => allTasks.filter((t) => t.category === "sci"), [allTasks]);
 
   async function saveInfo() {
     await fetch("/api/sci", {
@@ -98,6 +93,8 @@ export default function SCIPage() {
     });
     toast.success("Informations SCI mises à jour");
     setEditing(false);
+    setInfoSynced(false);
+    mutateSci();
   }
 
   const doneTasks = tasks.filter((t) => t.status === "done").length;

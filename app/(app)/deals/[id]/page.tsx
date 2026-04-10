@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
@@ -56,13 +57,10 @@ function buildSimulatorUrl(deal: DealDetail): string {
 export default function DealDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [deal, setDeal] = useState<DealDetail | null>(null);
-
-  useEffect(() => {
-    fetch(`/api/deals/${id}`)
-      .then((r) => r.json())
-      .then(setDeal);
-  }, [id]);
+  const { data: deal, mutate } = useSWR<DealDetail>(
+    id ? `/api/deals/${id}` : null,
+    fetcher
+  );
 
   if (!deal) {
     return (
@@ -172,7 +170,7 @@ export default function DealDetailPage() {
                 onValueChange={async (v) => {
                   if (v === null) return;
                   const prev = deal.status;
-                  setDeal({ ...deal, status: v });
+                  mutate({ ...deal, status: v }, { revalidate: false });
                   const res = await fetch(`/api/deals/${deal.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -180,8 +178,9 @@ export default function DealDetailPage() {
                   });
                   if (res.ok) {
                     toast.success("Statut mis à jour");
+                    mutate();
                   } else {
-                    setDeal({ ...deal, status: prev });
+                    mutate({ ...deal, status: prev }, { revalidate: false });
                     toast.error("Erreur lors de la mise à jour");
                   }
                 }}

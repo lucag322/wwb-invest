@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
 import { SearchInput } from "@/components/shared/search-input";
@@ -81,8 +83,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: contacts = [], isLoading: loading, mutate } = useSWR<Contact[]>("/api/contacts", fetcher);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -100,17 +101,6 @@ export default function ContactsPage() {
     notes: "",
     lastContactDate: "",
   });
-
-  const fetchContacts = useCallback(async () => {
-    const res = await fetch("/api/contacts");
-    const data = await res.json();
-    setContacts(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchContacts();
-  }, [fetchContacts]);
 
   const filtered = useMemo(() => {
     return contacts.filter((c) => {
@@ -180,7 +170,7 @@ export default function ContactsPage() {
     }
     setFormOpen(false);
     setEditingContact(null);
-    fetchContacts();
+    mutate();
   }
 
   async function handleDelete() {
@@ -188,7 +178,7 @@ export default function ContactsPage() {
     await fetch(`/api/contacts/${deleteId}`, { method: "DELETE" });
     toast.success("Contact supprimé");
     setDeleteId(null);
-    fetchContacts();
+    mutate();
   }
 
   if (loading) {

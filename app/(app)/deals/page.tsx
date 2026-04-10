@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/header";
@@ -103,8 +105,7 @@ const PROFIT_COLORS: Record<string, string> = {
 };
 
 export default function DealsPage() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: deals = [], isLoading: loading, mutate } = useSWR<Deal[]>("/api/deals", fetcher);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -112,17 +113,6 @@ export default function DealsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const router = useRouter();
-
-  const fetchDeals = useCallback(async () => {
-    const res = await fetch("/api/deals");
-    const data = await res.json();
-    setDeals(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchDeals();
-  }, [fetchDeals]);
 
   const filtered = useMemo(() => {
     return deals.filter((d) => {
@@ -143,7 +133,7 @@ export default function DealsPage() {
     });
     if (res.ok) {
       toast.success("Deal créé");
-      fetchDeals();
+      mutate();
     }
   }
 
@@ -157,7 +147,7 @@ export default function DealsPage() {
     if (res.ok) {
       toast.success("Deal modifié");
       setEditingDeal(null);
-      fetchDeals();
+      mutate();
     }
   }
 
@@ -166,7 +156,7 @@ export default function DealsPage() {
     await fetch(`/api/deals/${deleteId}`, { method: "DELETE" });
     toast.success("Deal supprimé");
     setDeleteId(null);
-    fetchDeals();
+    mutate();
   }
 
   if (loading) {

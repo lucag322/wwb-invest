@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense, useCallback } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
@@ -83,50 +85,41 @@ function CalculatorContent() {
   const [inputs, setInputs] = useState<CalculatorInputs>(
     DEFAULT_CALCULATOR_INPUTS
   );
-  const [savedDefaults, setSavedDefaults] = useState<Partial<CalculatorInputs>>(
-    {}
+  const { data: savedDefaultsRaw, mutate: mutateDefaults } = useSWR<Partial<CalculatorInputs>>(
+    "/api/calculator/defaults",
+    fetcher
   );
-  const [dealName, setDealName] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const loadDefaults = useCallback(async () => {
-    try {
-      const res = await fetch("/api/calculator/defaults");
-      const data = await res.json();
-      if (data && typeof data === "object" && !data.error) {
-        const hasKeys = Object.keys(data).length > 0;
-        if (hasKeys) {
-          setSavedDefaults(data);
-          return data as Partial<CalculatorInputs>;
-        }
-      }
-    } catch {
-      // ignore
+  const savedDefaults = useMemo(() => {
+    if (savedDefaultsRaw && typeof savedDefaultsRaw === "object" && !("error" in savedDefaultsRaw)) {
+      return Object.keys(savedDefaultsRaw).length > 0 ? savedDefaultsRaw : {};
     }
-    return null;
-  }, []);
+    return {};
+  }, [savedDefaultsRaw]);
+  const [dealName, setDealName] = useState<string | null>(null);
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const loaded = savedDefaultsRaw !== undefined;
 
   useEffect(() => {
-    loadDefaults().then((defaults) => {
-      const price = searchParams.get("price");
-      const rent = searchParams.get("rent");
-      const name = searchParams.get("name");
+    if (!loaded || defaultsApplied) return;
+    setDefaultsApplied(true);
 
-      if (price || rent) {
-        setInputs((prev) => ({
-          ...prev,
-          ...(defaults || {}),
-          ...(price ? { propertyPrice: Number(price) } : {}),
-          ...(rent ? { monthlyRentHC: Number(rent) } : {}),
-        }));
-        if (name) setDealName(name);
-      } else if (defaults) {
-        setInputs((prev) => ({ ...prev, ...defaults }));
-      }
-      setLoaded(true);
-    });
-  }, [searchParams, loadDefaults]);
+    const price = searchParams.get("price");
+    const rent = searchParams.get("rent");
+    const name = searchParams.get("name");
+
+    if (price || rent) {
+      setInputs((prev) => ({
+        ...prev,
+        ...savedDefaults,
+        ...(price ? { propertyPrice: Number(price) } : {}),
+        ...(rent ? { monthlyRentHC: Number(rent) } : {}),
+      }));
+      if (name) setDealName(name);
+    } else if (Object.keys(savedDefaults).length > 0) {
+      setInputs((prev) => ({ ...prev, ...savedDefaults }));
+    }
+  }, [loaded, defaultsApplied, searchParams, savedDefaults]);
 
   const results = useMemo(() => calculateProjectCost(inputs), [inputs]);
 
@@ -142,7 +135,7 @@ function CalculatorContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(inputs),
       });
-      setSavedDefaults(inputs);
+      mutateDefaults(inputs, { revalidate: false });
       toast.success("Valeurs par défaut sauvegardées");
     } catch {
       toast.error("Erreur de sauvegarde");
