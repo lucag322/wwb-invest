@@ -189,22 +189,24 @@ export function RichTextContent({
         heading: { levels: [2, 3] },
       }),
       TaskList,
-      TaskItem.configure({
-        nested: true,
-        onReadOnlyChecked: () => true,
-      }),
+      TaskItem.configure({ nested: true }),
     ],
     content,
-    editable: false,
-    onTransaction: ({ transaction, editor: e }) => {
-      if (transaction.docChanged) {
-        callbackRef.current?.(e.getHTML());
-      }
+    editable: !!onCheckToggle,
+    onUpdate: ({ editor: e }) => {
+      callbackRef.current?.(e.getHTML());
     },
     editorProps: {
       attributes: {
-        class: cn("tiptap-editor outline-none text-sm leading-relaxed", className),
+        class: cn(
+          "tiptap-editor outline-none text-sm leading-relaxed",
+          onCheckToggle && "caret-transparent select-none",
+          className
+        ),
       },
+      handleKeyDown: onCheckToggle ? () => true : undefined,
+      handlePaste: onCheckToggle ? () => true : undefined,
+      handleDrop: onCheckToggle ? () => true : undefined,
     },
   });
 
