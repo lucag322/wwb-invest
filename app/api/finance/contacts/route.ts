@@ -4,9 +4,8 @@ import { requireUserId } from "@/lib/get-user";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const contacts = await prisma.financeContact.findMany({
-      where: { userId },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(contacts);

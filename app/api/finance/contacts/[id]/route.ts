@@ -7,11 +7,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const body = await req.json();
     const contact = await prisma.financeContact.update({
-      where: { id, userId },
+      where: { id },
       data: body,
     });
     return NextResponse.json(contact);
@@ -25,9 +25,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
-    await prisma.financeContact.delete({ where: { id, userId } });
+    await prisma.financeContact.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

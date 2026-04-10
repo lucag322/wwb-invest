@@ -17,14 +17,14 @@ export async function GET() {
       contacts,
       dashboardSettings,
     ] = await Promise.all([
-      prisma.task.findMany({ where: { userId } }),
-      prisma.deal.findMany({ where: { userId } }),
-      prisma.financeContact.findMany({ where: { userId } }),
-      prisma.financeDocument.findMany({ where: { userId } }),
-      prisma.financeOverview.findUnique({ where: { userId } }),
-      prisma.sCIInfo.findUnique({ where: { userId } }),
-      prisma.sCIChecklist.findMany({ where: { userId } }),
-      prisma.contact.findMany({ where: { userId } }),
+      prisma.task.findMany(),
+      prisma.deal.findMany(),
+      prisma.financeContact.findMany(),
+      prisma.financeDocument.findMany(),
+      prisma.financeOverview.findFirst(),
+      prisma.sCIInfo.findFirst(),
+      prisma.sCIChecklist.findMany(),
+      prisma.contact.findMany(),
       prisma.dashboardSettings.findUnique({ where: { userId } }),
     ]);
 

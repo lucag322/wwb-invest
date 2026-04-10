@@ -17,13 +17,20 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const body = await req.json();
-    await prisma.dashboardSettings.upsert({
-      where: { userId },
-      update: { calculatorDefaults: body },
-      create: { userId, calculatorDefaults: body },
-    });
+
+    const allUsers = await prisma.user.findMany({ select: { id: true } });
+    await Promise.all(
+      allUsers.map((u) =>
+        prisma.dashboardSettings.upsert({
+          where: { userId: u.id },
+          update: { calculatorDefaults: body },
+          create: { userId: u.id, calculatorDefaults: body },
+        })
+      )
+    );
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

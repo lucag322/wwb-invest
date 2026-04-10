@@ -4,10 +4,8 @@ import { requireUserId } from "@/lib/get-user";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
-    const docs = await prisma.financeDocument.findMany({
-      where: { userId },
-    });
+    await requireUserId();
+    const docs = await prisma.financeDocument.findMany();
     return NextResponse.json(docs);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,10 +14,10 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id, checked } = await req.json();
     const doc = await prisma.financeDocument.update({
-      where: { id, userId },
+      where: { id },
       data: { checked },
     });
     return NextResponse.json(doc);

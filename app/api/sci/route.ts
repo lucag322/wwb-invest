@@ -4,11 +4,9 @@ import { requireUserId } from "@/lib/get-user";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
-    const [info, checklist] = await Promise.all([
-      prisma.sCIInfo.findUnique({ where: { userId } }),
-      prisma.sCIChecklist.findMany({ where: { userId } }),
-    ]);
+    await requireUserId();
+    const info = await prisma.sCIInfo.findFirst();
+    const checklist = await prisma.sCIChecklist.findMany();
     return NextResponse.json({ info, checklist });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,7 +30,7 @@ export async function PUT(req: Request) {
 
     if (body.type === "checklist") {
       const item = await prisma.sCIChecklist.update({
-        where: { id: body.id, userId },
+        where: { id: body.id },
         data: { checked: body.checked },
       });
       return NextResponse.json(item);
