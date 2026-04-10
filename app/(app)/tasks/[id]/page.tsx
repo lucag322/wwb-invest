@@ -8,6 +8,7 @@ import { fetcher } from "@/lib/fetcher";
 import { PageContainer } from "@/components/shared/page-container";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { TaskForm } from "@/features/tasks/components/task-form";
+import { RichTextContent } from "@/components/shared/rich-text-editor";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -259,9 +260,7 @@ export default function TaskDetailPage() {
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
                   Description
                 </h3>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {task.description}
-                </div>
+                <RichTextContent content={task.description} />
               </div>
             )}
 
@@ -274,9 +273,10 @@ export default function TaskDetailPage() {
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
                   Notes
                 </h3>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
-                  {task.notes}
-                </div>
+                <RichTextContent
+                  content={task.notes}
+                  className="text-muted-foreground"
+                />
               </div>
             )}
           </CardContent>

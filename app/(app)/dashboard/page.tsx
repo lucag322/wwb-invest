@@ -632,27 +632,26 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {data.recentTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-3 rounded-lg border border-border p-3"
-                    >
-                      <CheckSquare
-                        className={`h-4 w-4 ${PRIORITY_COLORS[task.priority] || "text-muted-foreground"}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {task.title}
-                        </p>
-                        {task.dueDate && (
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(task.dueDate)}
+                    <Link key={task.id} href={`/tasks/${task.id}`}>
+                      <div className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-accent/30 transition-colors cursor-pointer">
+                        <CheckSquare
+                          className={`h-4 w-4 ${PRIORITY_COLORS[task.priority] || "text-muted-foreground"}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {task.title}
                           </p>
-                        )}
+                          {task.dueDate && (
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(task.dueDate)}
+                            </p>
+                          )}
+                        </div>
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          {task.category}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-xs shrink-0">
-                        {task.category}
-                      </Badge>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

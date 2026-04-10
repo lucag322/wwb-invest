@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -145,15 +146,13 @@ export function TaskForm({
           {/* Description */}
           <div>
             <SectionTitle icon={AlignLeft}>Description</SectionTitle>
-            <Textarea
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              rows={2}
-              placeholder="Détails de la tâche..."
-              className="mt-1 resize-none"
-            />
+            <div className="mt-1">
+              <RichTextEditor
+                content={form.description || ""}
+                onChange={(html) => setForm({ ...form, description: html })}
+                placeholder="Détails de la tâche..."
+              />
+            </div>
           </div>
 
           {/* Status & Priority */}
@@ -290,13 +289,13 @@ export function TaskForm({
           {/* Notes */}
           <div>
             <SectionTitle icon={StickyNote}>Notes</SectionTitle>
-            <Textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={2}
-              placeholder="Remarques, liens utiles..."
-              className="mt-1 resize-none"
-            />
+            <div className="mt-1">
+              <RichTextEditor
+                content={form.notes || ""}
+                onChange={(html) => setForm({ ...form, notes: html })}
+                placeholder="Remarques, liens utiles..."
+              />
+            </div>
           </div>
 
           {/* Actions */}
