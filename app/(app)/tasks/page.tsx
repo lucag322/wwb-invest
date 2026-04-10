@@ -3,7 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
 import { SearchInput } from "@/components/shared/search-input";
@@ -79,6 +79,7 @@ export default function TasksPage() {
 
 function TasksContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const categoryParam = searchParams.get("category");
   const dealIdParam = searchParams.get("dealId");
 
@@ -250,12 +251,14 @@ function TasksContent() {
           {filtered.map((task) => (
             <div
               key={task.id}
-              className="flex items-start gap-3 rounded-lg border border-border p-3 hover:bg-accent/30 transition-colors"
+              className="flex items-start gap-3 rounded-lg border border-border p-3 hover:bg-accent/30 transition-colors cursor-pointer"
+              onClick={() => router.push(`/tasks/${task.id}`)}
             >
               <Checkbox
                 checked={task.status === "done"}
                 onCheckedChange={() => toggleDone(task)}
                 className="mt-0.5"
+                onClick={(e) => e.stopPropagation()}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -287,19 +290,26 @@ function TasksContent() {
                 )}
               </div>
               <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-muted transition-colors">
+                <DropdownMenuTrigger
+                  className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-muted transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setEditingTask(task);
                     }}
                   >
                     <Pencil className="h-4 w-4 mr-2" /> Modifier
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => setDeleteId(task.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteId(task.id);
+                    }}
                     className="text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" /> Supprimer
@@ -327,24 +337,34 @@ function TasksContent() {
                   .map((task) => (
                     <div
                       key={task.id}
-                      className="rounded-lg border border-border p-3 space-y-2 hover:bg-accent/30 transition-colors"
+                      className="rounded-lg border border-border p-3 space-y-2 hover:bg-accent/30 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/tasks/${task.id}`)}
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-sm font-medium">
                           {task.title}
                         </span>
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-lg h-6 w-6 hover:bg-muted transition-colors">
+                          <DropdownMenuTrigger
+                            className="inline-flex items-center justify-center rounded-lg h-6 w-6 hover:bg-muted transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreVertical className="h-3.5 w-3.5" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => setEditingTask(task)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTask(task);
+                              }}
                             >
                               <Pencil className="h-4 w-4 mr-2" /> Modifier
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => setDeleteId(task.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteId(task.id);
+                              }}
                               className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" /> Supprimer

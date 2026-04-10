@@ -2,6 +2,26 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/get-user";
 
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userId = await requireUserId();
+    const { id } = await params;
+    const task = await prisma.task.findUnique({
+      where: { id, userId },
+      include: { deal: { select: { id: true, name: true } } },
+    });
+    if (!task) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json(task);
+  } catch {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+}
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
