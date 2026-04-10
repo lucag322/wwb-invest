@@ -5,11 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
-import { PageHeader } from "@/components/layout/header";
 import { PageContainer } from "@/components/shared/page-container";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { TaskForm } from "@/features/tasks/components/task-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,20 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/utils";
-import { TASK_STATUSES, TASK_CATEGORIES } from "@/lib/constants";
+import { TASK_STATUSES } from "@/lib/constants";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   Pencil,
   Trash2,
-  Flag,
   Calendar,
-  Tag,
-  FileText,
-  StickyNote,
   Building2,
-  CheckCircle2,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import type { TaskFormData } from "@/types";
 
@@ -51,22 +48,22 @@ interface TaskDetail {
   deal?: { id: string; name: string } | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  todo: "À faire",
-  in_progress: "En cours",
-  done: "Terminé",
+const STATUS_COLORS: Record<string, string> = {
+  todo: "bg-zinc-500/15 text-zinc-400",
+  in_progress: "bg-blue-500/15 text-blue-400",
+  done: "bg-green-500/15 text-green-400",
+};
+
+const PRIORITY_DOT: Record<string, string> = {
+  high: "bg-red-400",
+  medium: "bg-yellow-400",
+  low: "bg-green-400",
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
   high: "Haute",
   medium: "Moyenne",
   low: "Basse",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  high: "bg-red-500/15 text-red-400 border-red-500/30",
-  medium: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  low: "bg-green-500/15 text-green-400 border-green-500/30",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -113,6 +110,24 @@ export default function TaskDetailPage() {
     router.push("/tasks");
   }
 
+  async function updateStatus(v: string | null) {
+    if (!v) return;
+    const prev = task!.status;
+    mutate({ ...task!, status: v }, { revalidate: false });
+    const res = await fetch(`/api/tasks/${task!.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: v }),
+    });
+    if (res.ok) {
+      toast.success("Statut mis à jour");
+      mutate();
+    } else {
+      mutate({ ...task!, status: prev }, { revalidate: false });
+      toast.error("Erreur lors de la mise à jour");
+    }
+  }
+
   if (!task) {
     return (
       <PageContainer>
@@ -128,164 +143,159 @@ export default function TaskDetailPage() {
     new Date(task.dueDate) < new Date() &&
     task.status !== "done";
 
+  const hasContent = task.description || task.notes;
+
   return (
     <PageContainer>
       <Button
         variant="ghost"
         size="sm"
         onClick={() => router.back()}
-        className="mb-2"
+        className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+        <ArrowLeft className="h-4 w-4 mr-1" /> Tâches
       </Button>
 
-      <PageHeader
-        title={task.title}
-        description={STATUS_LABELS[task.status] || task.status}
-        action={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-              <Pencil className="h-4 w-4 mr-1" /> Modifier
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-1" /> Supprimer
-            </Button>
-          </div>
-        }
-      />
+      {/* Header card */}
+      <Card className="overflow-hidden">
+        <div className="flex">
+          {/* Priority accent bar */}
+          <div className={`w-1 shrink-0 ${PRIORITY_DOT[task.priority] || "bg-zinc-500"}`} />
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Détails</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <InfoRow icon={CheckCircle2} label="Statut">
-              <Select
-                value={task.status}
-                onValueChange={async (v) => {
-                  if (v === null) return;
-                  const prev = task.status;
-                  mutate({ ...task, status: v }, { revalidate: false });
-                  const res = await fetch(`/api/tasks/${task.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ status: v }),
-                  });
-                  if (res.ok) {
-                    toast.success("Statut mis à jour");
-                    mutate();
-                  } else {
-                    mutate({ ...task, status: prev }, { revalidate: false });
-                    toast.error("Erreur lors de la mise à jour");
-                  }
-                }}
-              >
-                <SelectTrigger className="w-36 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TASK_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </InfoRow>
-
-            <InfoRow icon={Flag} label="Priorité">
-              <Badge
-                variant="outline"
-                className={`text-xs ${PRIORITY_COLORS[task.priority]}`}
-              >
-                {PRIORITY_LABELS[task.priority] || task.priority}
-              </Badge>
-            </InfoRow>
-
-            <InfoRow icon={Tag} label="Catégorie">
-              <Badge variant="secondary" className="text-xs">
-                {CATEGORY_LABELS[task.category] || task.category}
-              </Badge>
-            </InfoRow>
-
-            {task.dueDate && (
-              <InfoRow icon={Calendar} label="Échéance">
-                <span
-                  className={`text-sm font-medium ${isOverdue ? "text-destructive" : ""}`}
+          <div className="flex-1 p-5 md:p-6">
+            {/* Top row: badges + actions */}
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select value={task.status} onValueChange={updateStatus}>
+                  <SelectTrigger
+                    className={`h-7 w-auto gap-1.5 border-0 px-2.5 text-xs font-medium ${STATUS_COLORS[task.status] || ""}`}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Badge variant="secondary" className="text-xs">
+                  {CATEGORY_LABELS[task.category] || task.category}
+                </Badge>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span
+                    className={`h-2 w-2 rounded-full ${PRIORITY_DOT[task.priority] || "bg-zinc-500"}`}
+                  />
+                  {PRIORITY_LABELS[task.priority] || task.priority}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setEditing(true)}
                 >
-                  {formatDate(task.dueDate)}
-                  {isOverdue && " (en retard)"}
-                </span>
-              </InfoRow>
-            )}
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
 
-            {task.deal && (
-              <InfoRow icon={Building2} label="Deal lié">
+            {/* Title */}
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
+              {task.title}
+            </h1>
+
+            {/* Meta row */}
+            <div className="flex items-center gap-4 mt-3 flex-wrap text-sm text-muted-foreground">
+              {task.dueDate && (
+                <div
+                  className={`flex items-center gap-1.5 ${isOverdue ? "text-destructive" : ""}`}
+                >
+                  {isOverdue ? (
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  ) : (
+                    <Calendar className="h-3.5 w-3.5" />
+                  )}
+                  <span>
+                    {formatDate(task.dueDate)}
+                    {isOverdue && " — en retard"}
+                  </span>
+                </div>
+              )}
+              {task.deal && (
                 <Link
                   href={`/deals/${task.deal.id}`}
-                  className="text-sm font-medium text-primary hover:underline"
+                  className="flex items-center gap-1.5 text-primary hover:underline"
                 >
+                  <Building2 className="h-3.5 w-3.5" />
                   {task.deal.name}
                 </Link>
-              </InfoRow>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                Créée le {formatDate(task.createdAt)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Content sections */}
+      {hasContent ? (
+        <Card>
+          <CardContent className="p-5 md:p-6 space-y-0">
+            {task.description && (
+              <div>
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  Description
+                </h3>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {task.description}
+                </div>
+              </div>
             )}
 
-            <InfoRow icon={Calendar} label="Créée le">
-              <span className="text-sm font-medium">
-                {formatDate(task.createdAt)}
-              </span>
-            </InfoRow>
+            {task.description && task.notes && (
+              <Separator className="my-5" />
+            )}
+
+            {task.notes && (
+              <div>
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  Notes
+                </h3>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                  {task.notes}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        <div className="space-y-6">
-          {task.description && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Description
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {task.description}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {task.notes && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <StickyNote className="h-4 w-4" /> Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {task.notes}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {!task.description && !task.notes && (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-sm text-muted-foreground text-center">
-                  Aucune description ni note pour cette tâche
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+      ) : (
+        <Card>
+          <CardContent className="py-12">
+            <p className="text-sm text-muted-foreground text-center">
+              Aucune description ni note —{" "}
+              <button
+                onClick={() => setEditing(true)}
+                className="text-primary hover:underline"
+              >
+                ajouter du contenu
+              </button>
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {editing && (
         <TaskForm
@@ -316,27 +326,5 @@ export default function TaskDetailPage() {
         destructive
       />
     </PageContainer>
-  );
-}
-
-function InfoRow({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-        <Icon className="h-4 w-4 text-primary" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <div className="mt-0.5">{children}</div>
-      </div>
-    </div>
   );
 }
