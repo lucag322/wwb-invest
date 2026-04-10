@@ -173,14 +173,36 @@ export function RichTextEditor({
 export function RichTextContent({
   content,
   className,
+  onCheckToggle,
 }: {
   content: string;
   className?: string;
+  onCheckToggle?: (html: string) => void;
 }) {
-  return (
-    <div
-      className={cn("tiptap-content text-sm leading-relaxed", className)}
-      dangerouslySetInnerHTML={{ __html: content }}
-    />
-  );
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+        onReadOnlyChecked: () => true,
+      }),
+    ],
+    content,
+    editable: false,
+    onUpdate: ({ editor: e }) => {
+      onCheckToggle?.(e.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: cn("tiptap-editor outline-none text-sm leading-relaxed", className),
+      },
+    },
+  });
+
+  if (!editor) return null;
+
+  return <EditorContent editor={editor} />;
 }

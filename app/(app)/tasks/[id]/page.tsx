@@ -111,6 +111,15 @@ export default function TaskDetailPage() {
     router.push("/tasks");
   }
 
+  async function saveField(field: string, value: string) {
+    mutate({ ...task!, [field]: value }, { revalidate: false });
+    await fetch(`/api/tasks/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+  }
+
   async function updateStatus(v: string | null) {
     if (!v) return;
     const prev = task!.status;
@@ -260,7 +269,10 @@ export default function TaskDetailPage() {
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
                   Description
                 </h3>
-                <RichTextContent content={task.description} />
+                <RichTextContent
+                  content={task.description}
+                  onCheckToggle={(html) => saveField("description", html)}
+                />
               </div>
             )}
 
@@ -276,6 +288,7 @@ export default function TaskDetailPage() {
                 <RichTextContent
                   content={task.notes}
                   className="text-muted-foreground"
+                  onCheckToggle={(html) => saveField("notes", html)}
                 />
               </div>
             )}
