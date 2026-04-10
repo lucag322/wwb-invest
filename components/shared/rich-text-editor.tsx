@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
@@ -179,6 +180,9 @@ export function RichTextContent({
   className?: string;
   onCheckToggle?: (html: string) => void;
 }) {
+  const callbackRef = useRef(onCheckToggle);
+  callbackRef.current = onCheckToggle;
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -192,8 +196,10 @@ export function RichTextContent({
     ],
     content,
     editable: false,
-    onUpdate: ({ editor: e }) => {
-      onCheckToggle?.(e.getHTML());
+    onTransaction: ({ transaction, editor: e }) => {
+      if (transaction.docChanged) {
+        callbackRef.current?.(e.getHTML());
+      }
     },
     editorProps: {
       attributes: {
