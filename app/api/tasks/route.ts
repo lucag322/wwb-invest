@@ -4,9 +4,8 @@ import { requireUserId } from "@/lib/get-user";
 
 export async function GET() {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const tasks = await prisma.task.findMany({
-      where: { userId },
       orderBy: { createdAt: "desc" },
       include: { deal: { select: { id: true, name: true } } },
     });

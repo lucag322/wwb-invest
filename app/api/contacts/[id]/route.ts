@@ -7,12 +7,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const contact = await prisma.contact.findUnique({
       where: { id },
     });
-    if (!contact || contact.userId !== userId) {
+    if (!contact) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json(contact);
@@ -26,11 +26,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const body = await req.json();
     const contact = await prisma.contact.update({
-      where: { id, userId },
+      where: { id },
       data: {
         ...body,
         lastContactDate: body.lastContactDate
@@ -49,9 +49,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
-    await prisma.contact.delete({ where: { id, userId } });
+    await prisma.contact.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

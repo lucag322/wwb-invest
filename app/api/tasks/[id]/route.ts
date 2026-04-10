@@ -7,10 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const task = await prisma.task.findUnique({
-      where: { id, userId },
+      where: { id },
       include: { deal: { select: { id: true, name: true } } },
     });
     if (!task) {
@@ -27,11 +27,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const body = await req.json();
     const task = await prisma.task.update({
-      where: { id, userId },
+      where: { id },
       data: {
         ...body,
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
@@ -48,9 +48,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
-    await prisma.task.delete({ where: { id, userId } });
+    await prisma.task.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

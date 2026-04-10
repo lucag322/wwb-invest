@@ -7,10 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const deal = await prisma.deal.findUnique({
-      where: { id, userId },
+      where: { id },
       include: { tasks: { orderBy: { createdAt: "desc" } } },
     });
     if (!deal) {
@@ -27,7 +27,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
     const body = await req.json();
 
@@ -36,7 +36,7 @@ export async function PUT(
       body.price > 0 ? (annualRent / body.price) * 100 : 0;
 
     const deal = await prisma.deal.update({
-      where: { id, userId },
+      where: { id },
       data: { ...body, grossYield },
     });
     return NextResponse.json(deal);
@@ -50,9 +50,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireUserId();
+    await requireUserId();
     const { id } = await params;
-    await prisma.deal.delete({ where: { id, userId } });
+    await prisma.deal.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
