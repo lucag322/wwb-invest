@@ -6,12 +6,17 @@ export const authConfig = {
   },
   session: { strategy: "jwt" },
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
+    authorized({ auth, request: { nextUrl, headers } }) {
       const isLoggedIn = !!auth?.user;
       const { pathname } = nextUrl;
 
       if (pathname.startsWith("/register")) {
         return Response.redirect(new URL("/login", nextUrl));
+      }
+
+      const apiKey = headers.get("x-api-key");
+      if (apiKey && pathname.startsWith("/api/")) {
+        return true;
       }
 
       const isAuthPage = pathname.startsWith("/login");
