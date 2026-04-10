@@ -386,9 +386,10 @@ export default function SCIPage() {
           ) : (
             <div className="space-y-1">
               {tasks.map((task) => (
-                <div
+                <Link
                   key={task.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/30 transition-colors"
+                  href={`/tasks/${task.id}`}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/30 transition-colors cursor-pointer"
                 >
                   <CheckSquare
                     className={`h-4 w-4 shrink-0 ${
@@ -418,7 +419,7 @@ export default function SCIPage() {
                   >
                     {STATUS_LABELS[task.status] || task.status}
                   </Badge>
-                </div>
+                </Link>
               ))}
             </div>
           )}
