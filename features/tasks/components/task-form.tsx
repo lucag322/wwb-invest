@@ -122,7 +122,7 @@ export function TaskForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:!max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg">
             {initialData?.id ? "Modifier la tâche" : "Nouvelle tâche"}
